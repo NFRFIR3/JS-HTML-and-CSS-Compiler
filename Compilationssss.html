@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Code Editor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/darcula.min.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+            background-color: white;
+            transition: background-color 0.5s, color 0.5s;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            width: 90%;
+            margin-top: 20px;
+        }
+
+        .editor-section {
+            width: 30%;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+        }
+
+        #outputContainer {
+            width: 90%;
+            margin-top: 20px;
+        }
+
+        .output {
+            width: 100%;
+            height: 300px;
+            border: 2px solid #ccc;
+        }
+
+        /* Toggle Switch CSS */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+        }
+
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        /* Rounded switch */
+        .slider.round {
+            border-radius: 34px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+
+        /* Dark mode background */
+        body.dark-mode {
+            background-color: #333;
+            color: white;
+        }
+
+        /* Dark mode for editors and output */
+        body.dark-mode .output {
+            border-color: #444;
+        }
+
+        body.dark-mode .editor-section h3 {
+            color: white;
+        }
+
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="theme-switch">
+        <label class="switch">
+            <input type="checkbox" id="themeToggle">
+            <span class="slider round"></span>
+        </label>
+    </div>
+
+    <div class="container">
+        <div class="editor-section">
+            <h3>HTML Code</h3>
+            <textarea id="htmlEditor"></textarea>
+        </div>
+        <div class="editor-section">
+            <h3>CSS Code</h3>
+            <textarea id="cssEditor"></textarea>
+        </div>
+        <div class="editor-section">
+            <h3>JavaScript Code</h3>
+            <textarea id="jsEditor"></textarea>
+        </div>
+    </div>
+
+    <div id="outputContainer">
+        <iframe id="output" class="output"></iframe>
+    </div>
+
+    <div class="file-opener">
+        <input type="file" id="fileInput">
+    </div>
+
+    <!-- CodeMirror and required scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/show-hint.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/xml-hint.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/javascript-hint.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/css-hint.js"></script>
+    <script>
+        // Initialize CodeMirror editors with autocompletion and auto close brackets
+        const htmlEditor = CodeMirror.fromTextArea(document.getElementById('htmlEditor'), {
+            mode: 'xml',
+            lineNumbers: true,
+            theme: 'default',
+            extraKeys: {
+                "Ctrl-Space": "autocomplete",
+                "Tab": function(cm) {
+                    if (cm.getMode().name === 'xml') {
+                        CodeMirror.commands.closeTag(cm);
+                    } else {
+                        cm.execCommand("indentMore");
+                    }
+                }
+            },
+            hintOptions: {
+                completeSingle: false
+            },
+            autoCloseBrackets: true,
+            autoCloseTags: true // Automatically closes HTML tags
+        });
+
+        const cssEditor = CodeMirror.fromTextArea(document.getElementById('cssEditor'), {
+            mode: 'css',
+            lineNumbers: true,
+            theme: 'default',
+            extraKeys: {
+                "Ctrl-Space": "autocomplete",
+                "Tab": "autocomplete"
+            },
+            hintOptions: {
+                completeSingle: false
+            },
+            autoCloseBrackets: true
+        });
+
+        const jsEditor = CodeMirror.fromTextArea(document.getElementById('jsEditor'), {
+            mode: 'javascript',
+            lineNumbers: true,
+            theme: 'default',
+            extraKeys: {
+                "Ctrl-Space": "autocomplete",
+                "Tab": "autocomplete"
+            },
+            hintOptions: {
+                completeSingle: false
+            },
+            autoCloseBrackets: true
+        });
+
+        htmlEditor.on("inputRead", function(editor) {
+            if (!editor.state.completionActive && editor.getMode().name === 'xml') {
+                editor.showHint({hint: CodeMirror.hint.html});
+            }
+        });
+
+        cssEditor.on("inputRead", function(editor) {
+            if (!editor.state.completionActive && editor.getMode().name === 'css') {
+                editor.showHint({hint: CodeMirror.hint.css});
+            }
+        });
+
+        jsEditor.on("inputRead", function(editor) {
+            if (!editor.state.completionActive && editor.getMode().name === 'javascript') {
+                editor.showHint({hint: CodeMirror.hint.javascript});
+            }
+        });
+
+        // Function to update the iframe live preview
+        function updateOutput() {
+            const htmlContent = htmlEditor.getValue();
+            const cssContent = `<style>
+                ${cssEditor.getValue()}
+                ${document.body.classList.contains('dark-mode') ? 'body { color: white; background-color: #333; }' : ''}
+            </style>`;
+            const jsContent = `<script>${jsEditor.getValue()}<\/script>`;
+
+            const output = document.getElementById('output');
+            output.srcdoc = htmlContent + cssContent + jsContent;
+        }
+
+        // Add change listeners to all editors to update live preview
+        htmlEditor.on('change', updateOutput);
+        cssEditor.on('change', updateOutput);
+        jsEditor.on('change', updateOutput);
+
+        // Initial render
+        updateOutput();
+
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('themeToggle');
+        let currentTheme = 'default';
+
+        themeToggle.addEventListener('change', () => {
+            if (themeToggle.checked) {
+                currentTheme = 'darcula'; // Dark mode
+                document.body.classList.add('dark-mode');
+            } else {
+                currentTheme = 'default'; // Light mode
+                document.body.classList.remove('dark-mode');
+            }
+            htmlEditor.setOption('theme', currentTheme);
+            cssEditor.setOption('theme', currentTheme);
+            jsEditor.setOption('theme', currentTheme);
+            
+            updateOutput(); // Update iframe content to reflect dark mode text color
+        });
+
+        // File opener functionality
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const content = e.target.result;
+                const extension = file.name.split('.').pop().toLowerCase();
+
+                if (extension === 'html') {
+                    htmlEditor.setValue(content);
+                } else if (extension === 'css') {
+                    cssEditor.setValue(content);
+                } else if (extension === 'js') {
+                    jsEditor.setValue(content);
+                } else {
+                    alert('Please select an HTML, CSS, or JavaScript file.');
+                }
+                updateOutput();
+            };
+
+            if (file) {
+                reader.readAsText(file);
+            }
+        });
+    </script>
+</body>
+</html>
