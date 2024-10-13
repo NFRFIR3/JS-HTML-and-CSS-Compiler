@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Live Code Editor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/darcula.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/show-hint.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+            background-color: white;
+            transition: background-color 0.5s, color 0.5s;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            width: 90%;
+            margin-top: 20px;
+        }
+
+        .editor-section {
+            width: 30%;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+        }
+
+        #outputContainer {
+            width: 90%;
+            margin-top: 20px;
+        }
+
+        .output {
+            width: 100%;
+            height: 300px;
+            border: 2px solid #ccc;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+        }
+
+        #hexCodeDisplay {
+            margin-left: 10px;
+            font-weight: bold;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+        }
+
+        input:checked+.slider {
+            background-color: #2196F3;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(26px);
+        }
+
+        .slider.round {
+            border-radius: 34px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+
+        textarea {
+            font-family: monospace;
+        }
+
+        .CodeMirror {
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .config-menu {
+            margin-top: 10px;
+        }
+
+        body.dark-mode {
+            background-color: #333;
+            color: white;
+        }
+
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: transform 0.2s;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        #customBackgroundInput,
+        #backgroundColorPicker {
+            margin: 5px 0;
+        }
+
+        #hexValue {
+            margin-left: 10px;
+        }
+
+        .code-editor {
+            margin-top: 20px;
+            padding: 20px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            min-height: 300px;
+        }
+
+        .dark-mode .code-editor {
+            background: #444;
+            border-color: #555;
+            color: #eee;
+        }
+
+        .toolbar {
+            padding: 10px;
+            background: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        body.dark-mode .output {
+            border-color: #444;
+        }
+
+        body.dark-mode .editor-section h3 {
+            color: white;
+        }
+
+        #WB-logo {
+            display: flex;
+            margin-top: 1px;
+            margin-right: 95%;
+            font-size: 15px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        @keyframes colorShift {
+            0% {
+                color: red;
+            }
+
+            20% {
+                color: orange;
+            }
+
+            40% {
+                color: yellow;
+            }
+
+            60% {
+                color: green;
+            }
+
+            80% {
+                color: blue;
+            }
+
+            100% {
+                color: purple;
+            }
+        }
+
+        #WB-logo {
+            animation: colorShift 5s infinite;
+            animation-timing-function: linear;
+        }
+    </style>
+</head>
+
+<body>
+    <p id="WB-logo">Compiler V2</p>
+    <label for="colorPicker">Select a custom background color:</label>
+    <input type="color" id="colorPicker" />
+    <span id="hexCodeDisplay">#ffffff</span>
+
+    <div class="theme-switch">
+        <label class="switch">
+            <input type="checkbox" id="themeToggle">
+            <span class="slider round"></span>
+        </label>
+    </div>
+
+    <div class="config-menu">
+        <h4>Configuration</h4>
+        <div>
+            <label for="backgroundSelection">Choose Background:</label>
+            <select id="backgroundSelection">
+                <option value="#ffffff">White</option>
+                <option value="#f0f0f0">Light Gray</option>
+                <option value="#333333">Dark</option>
+                <option value="#1e1e1e">VS Code Dark</option>
+                <option value="#000000">Black</option>
+                <option value="custom">Custom...</option>
+            </select>
+            <label for="customBackgroundInput"><b> // Upload Custom Background:</b></label>
+            <input type="file" id="customBackgroundInput" accept="image/*">
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="editor-section">
+            <h3>HTML Code</h3>
+            <textarea id="htmlEditor"></textarea>
+        </div>
+        <div class="editor-section">
+            <h3>CSS Code</h3>
+            <textarea id="cssEditor"></textarea>
+        </div>
+        <div class="editor-section">
+            <h3>JavaScript Code</h3>
+            <textarea id="jsEditor"></textarea>
+        </div>
+    </div>
+
+    <div id="outputContainer">
+        <iframe id="output" class="output"></iframe>
+    </div>
+
+    <div class="file-opener">
+        <b>Import Your Code Here: </b>
+        <input type="file" id="fileInput">
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/show-hint.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/xml-hint.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/html-hint.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/css-hint.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/javascript-hint.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/edit/closetag.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/format/formatting.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/edit/closebrackets.js"></script>
+    <script>
+        (function () {
+            const htmlEditor = CodeMirror.fromTextArea(document.getElementById("htmlEditor"), {
+                mode: "xml",
+                lineNumbers: true,
+                theme: "darcula",
+                autoCloseTags: true,
+                extraKeys: {
+                    "Ctrl-Space": "autocomplete",
+                    "'>'": function (cm) {
+                        cm.replaceSelection('>');
+                        setTimeout(() => CodeMirror.commands.closeTag(cm), 10);
+                    },
+                    "Shift-Q": function (cm) {
+                        const selected = cm.getSelection();
+                        if (selected) cm.replaceSelection(`"${selected}"`);
+                    }
+                },
+                hintOptions: { completeSingle: false }
+            });
+
+            const cssEditor = CodeMirror.fromTextArea(document.getElementById("cssEditor"), {
+                mode: "css",
+                lineNumbers: true,
+                theme: "darcula",
+                autoCloseBrackets: true,
+                extraKeys: {
+                    "Ctrl-Space": "autocomplete",
+                    Tab: "autocomplete",
+                    Enter: function (cm) {
+                        cm.replaceSelection('\n    ');
+                        cm.execCommand('indentAuto');
+                    },
+                    "Shift-Q": function (cm) {
+                        const selected = cm.getSelection();
+                        if (selected) cm.replaceSelection(`"${selected}"`);
+                    }
+                },
+                hintOptions: { completeSingle: false }
+            });
+
+            const jsEditor = CodeMirror.fromTextArea(document.getElementById("jsEditor"), {
+                mode: "javascript",
+                lineNumbers: true,
+                theme: "darcula",
+                autoCloseBrackets: true,
+                extraKeys: {
+                    "Ctrl-Space": "autocomplete",
+                    Tab: "autocomplete",
+                    Enter: function (cm) {
+                        cm.replaceSelection('\n    ');
+                        cm.execCommand('indentAuto');
+                    },
+                    "Shift-Q": function (cm) {
+                        const selected = cm.getSelection();
+                        if (selected) cm.replaceSelection(`"${selected}"`);
+                    }
+                },
+                hintOptions: { completeSingle: false }
+            });
+
+            function setupAutoCompletion(editor, mode) {
+                editor.on("inputRead", function (editor, change) {
+                    if (change.text[0] !== ' ') {
+                        editor.showHint({
+                            hint: CodeMirror.hint[mode],
+                            completeSingle: false
+                        });
+                    }
+                });
+            }
+
+            setupAutoCompletion(htmlEditor, 'html');
+            setupAutoCompletion(cssEditor, 'css');
+            setupAutoCompletion(jsEditor, 'javascript');
+
+            function updateOutput() {
+                const htmlContent = htmlEditor.getValue();
+                const cssContent = `<style>${cssEditor.getValue()}</style>`;
+                const jsContent = `<script>${jsEditor.getValue()}<\/script>`;
+
+                const output = document.getElementById("output");
+                output.srcdoc = htmlContent + cssContent + jsContent;
+            }
+
+            htmlEditor.on("change", updateOutput);
+            cssEditor.on("change", updateOutput);
+            jsEditor.on("change", updateOutput);
+            updateOutput();
+
+            let customBackground = null;
+            const colorPicker = document.getElementById("colorPicker");
+            const backgroundSelection = document.getElementById("backgroundSelection");
+            const customBackgroundInput = document.getElementById("customBackgroundInput");
+            const themeToggle = document.getElementById("themeToggle");
+
+            function applyBackground(color) {
+                if (customBackground) {
+                    document.body.style.backgroundImage = `url(${customBackground})`;
+                    document.body.style.backgroundColor = 'transparent';
+                } else if (color) {
+                    document.body.style.backgroundImage = 'none';
+                    document.body.style.backgroundColor = color;
+                } else {
+                    document.body.style.backgroundImage = 'none';
+                    document.body.style.backgroundColor = themeToggle.checked ? '#333' : '#fff';
+                }
+            }
+
+            colorPicker.addEventListener("input", () => {
+                customBackground = null;
+                applyBackground(colorPicker.value);
+                document.getElementById("hexCodeDisplay").textContent = colorPicker.value;
+            });
+
+            backgroundSelection.addEventListener("change", (event) => {
+                const value = event.target.value;
+                customBackground = null;
+                applyBackground(value !== 'custom' ? value : '#ffffff');
+            });
+
+            customBackgroundInput.addEventListener("change", () => {
+                const file = customBackgroundInput.files[0];
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    customBackground = e.target.result;
+                    applyBackground();
+                };
+                reader.readAsDataURL(file);
+            });
+
+            themeToggle.addEventListener("change", () => {
+                document.body.classList.toggle("dark-theme");
+                applyBackground();
+            });
+
+            applyBackground();
+
+            document.getElementById("fileInput").addEventListener("change", function (event) {
+                const file = event.target.files[0];
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    const content = e.target.result;
+                    const extension = file.name.split('.').pop();
+
+                    if (extension === 'html') {
+                        htmlEditor.setValue(content);
+                    } else if (extension === 'css') {
+                        cssEditor.setValue(content);
+                    } else if (extension === 'js') {
+                        jsEditor.setValue(content);
+                    } else {
+                        alert('The selected file type is not accepted. Please choose an HTML, CSS, or JS file.');
+                    }
+                };
+
+                reader.readAsText(file);
+            });
+        })();
+    </script>
+</body>
+
+</html>
